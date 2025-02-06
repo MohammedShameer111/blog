@@ -3,22 +3,18 @@ import React, { useEffect, useState } from "react";
 const App = () => {
   const [location, setLocation] = useState(null);
   const [manualSelection, setManualSelection] = useState(null);
-  const [loading, setLoading] = useState(true); // To show loading state
+  const [loading, setLoading] = useState(true);
+  const [errorMsg, setErrorMsg] = useState(null); // Store error messages
 
   useEffect(() => {
     if ("geolocation" in navigator) {
-      // Automatically detect the location only when the user allows permission
       navigator.geolocation.getCurrentPosition(
         (position) => {
           let latitude = position.coords.latitude;
           let longitude = position.coords.longitude;
 
-          // ✅ Uncomment the below lines to simulate testing locations (for USA or India)
-          // latitude = 37.7749;  // San Francisco, USA
-          // longitude = -122.4194; 
-
-          console.log("Detected Latitude:", latitude);
-          console.log("Detected Longitude:", longitude);
+          console.log("Latitude:", latitude);
+          console.log("Longitude:", longitude);
 
           if (latitude >= 8 && latitude <= 37 && longitude >= 68 && longitude <= 97) {
             setLocation("IN"); // India
@@ -27,21 +23,32 @@ const App = () => {
           } else {
             setLocation("Other");
           }
-          setLoading(false); // Stop loading once location is set
+          setLoading(false);
         },
         (error) => {
-          console.error("Location error:", error);
-          setLocation("Permission Denied");
+          console.error("Geolocation Error:", error);
           setLoading(false);
+
+          if (error.code === error.PERMISSION_DENIED) {
+            setErrorMsg("Location access is blocked. Please allow it in your browser settings.");
+          } else if (error.code === error.POSITION_UNAVAILABLE) {
+            setErrorMsg("Location information is unavailable. Try again later.");
+          } else if (error.code === error.TIMEOUT) {
+            setErrorMsg("Location request timed out. Please refresh and try again.");
+          } else {
+            setErrorMsg("An unknown error occurred.");
+          }
+
+          setLocation("Permission Denied");
         }
       );
     } else {
+      setErrorMsg("Geolocation is not supported by your browser.");
       setLocation("Geolocation Not Supported");
       setLoading(false);
     }
   }, []);
 
-  // Function for manual country selection
   const handleManualSelection = (country) => {
     setManualSelection(country);
   };
@@ -52,7 +59,14 @@ const App = () => {
     <div style={styles.container}>
       <h2>Location-Based Blog</h2>
 
-      {loading && <p>Loading location...</p>} {/* Show loading message while detecting location */}
+      {loading && <p>🔄 Detecting location...</p>}
+
+      {errorMsg && (
+        <div style={styles.errorBox}>
+          <p>⚠️ {errorMsg}</p>
+          <p>Please enable location access or select a country below:</p>
+        </div>
+      )}
 
       {finalLocation === "IN" && (
         <div style={styles.content}>
@@ -70,7 +84,7 @@ const App = () => {
 
       {finalLocation === "Other" && (
         <div style={styles.content}>
-          <h1>Welcome to the Global Blog</h1>
+          <h1>🌍 Welcome to the Global Blog</h1>
           <p>Discover international stories, news, and more.</p>
         </div>
       )}
@@ -99,6 +113,13 @@ const styles = {
     borderRadius: "10px",
     margin: "20px auto",
     maxWidth: "500px",
+  },
+  errorBox: {
+    background: "#ffcccb",
+    padding: "10px",
+    borderRadius: "5px",
+    color: "red",
+    fontWeight: "bold",
   },
   manualSelection: {
     marginTop: "20px",
