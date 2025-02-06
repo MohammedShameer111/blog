@@ -3,9 +3,11 @@ import React, { useEffect, useState } from "react";
 const App = () => {
   const [location, setLocation] = useState(null);
   const [manualSelection, setManualSelection] = useState(null);
+  const [loading, setLoading] = useState(true); // To show loading state
 
   useEffect(() => {
     if ("geolocation" in navigator) {
+      // Automatically detect the location only when the user allows permission
       navigator.geolocation.getCurrentPosition(
         (position) => {
           let latitude = position.coords.latitude;
@@ -25,14 +27,17 @@ const App = () => {
           } else {
             setLocation("Other");
           }
+          setLoading(false); // Stop loading once location is set
         },
         (error) => {
           console.error("Location error:", error);
           setLocation("Permission Denied");
+          setLoading(false);
         }
       );
     } else {
       setLocation("Geolocation Not Supported");
+      setLoading(false);
     }
   }, []);
 
@@ -45,7 +50,9 @@ const App = () => {
 
   return (
     <div style={styles.container}>
-      <h2> Location-Based Blog</h2>
+      <h2>Location-Based Blog</h2>
+
+      {loading && <p>Loading location...</p>} {/* Show loading message while detecting location */}
 
       {finalLocation === "IN" && (
         <div style={styles.content}>
@@ -63,14 +70,14 @@ const App = () => {
 
       {finalLocation === "Other" && (
         <div style={styles.content}>
-          <h1> Welcome to the Global Blog</h1>
+          <h1>Welcome to the Global Blog</h1>
           <p>Discover international stories, news, and more.</p>
         </div>
       )}
 
       {(location === "Permission Denied" || location === "Geolocation Not Supported") && (
         <div style={styles.manualSelection}>
-          <h2> Unable to detect location. Please select your country:</h2>
+          <h2>Unable to detect location. Please select your country:</h2>
           <button style={styles.button} onClick={() => handleManualSelection("IN")}>🇮🇳 India</button>
           <button style={styles.button} onClick={() => handleManualSelection("US")}>🇺🇸 USA</button>
         </div>
